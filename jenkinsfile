@@ -19,6 +19,9 @@ pipeline {
             steps {
                 sshagent(credentials: ["${SSH_CRED}"]) {
                     sh '''
+                        echo "Installing and starting Apache web server on target server..."
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "sudo apt update && sudo apt install -y apache2 && sudo systemctl enable --now apache2"
+
                         echo "Ensuring web directory exists and cleaning old files..."
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "sudo mkdir -p ${WEB_DIR} && sudo rm -rf ${WEB_DIR}/*"
 
