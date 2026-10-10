@@ -19,20 +19,20 @@ pipeline {
             steps {
                 sshagent(credentials: ["${SSH_CRED}"]) {
                     sh '''
-                        echo "Installing and starting Apache web server on target server..."
+                        echo "Installing and starting Apache web server..."
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "sudo apt update && sudo apt install -y apache2 && sudo systemctl enable --now apache2"
 
-                        echo "Ensuring web directory exists and cleaning old files..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "sudo mkdir -p ${WEB_DIR} && sudo rm -rf ${WEB_DIR}/*"
+                        echo "Compressing portfolio files into portfolio.tar.gz..."
+                        tar -czf portfolio.tar.gz index.html css js images Drup_Aherwar_Resume.pdf
 
-                        echo "Creating temp upload directory..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "mkdir -p /tmp/portfolio"
+                        echo "Uploading portfolio.tar.gz to target server..."
+                        scp -o StrictHostKeyChecking=no portfolio.tar.gz ${REMOTE_USER}@${SERVER_IP}:/tmp/
 
-                        echo "Uploading portfolio files..."
-                        scp -o StrictHostKeyChecking=no -r index.html css js images Drup_Aherwar_Resume.pdf ${REMOTE_USER}@${SERVER_IP}:/tmp/portfolio/
+                        echo "Extracting portfolio files to ${WEB_DIR}..."
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "sudo rm -rf ${WEB_DIR}/* && sudo tar -xzf /tmp/portfolio.tar.gz -C ${WEB_DIR}/ && rm -f /tmp/portfolio.tar.gz"
 
-                        echo "Deploying to web directory..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${SERVER_IP} "sudo cp -r /tmp/portfolio/* ${WEB_DIR}/ && sudo rm -rf /tmp/portfolio"
+                        echo "Cleaning up local archive..."
+                        rm -f portfolio.tar.gz
                     '''
                 }
             }
